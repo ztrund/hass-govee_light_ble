@@ -37,7 +37,6 @@ async def async_setup_entry(
 class GoveeBluetoothLight(CoordinatorEntity, LightEntity):
 
     _attr_supported_color_modes = {ColorMode.RGB, ColorMode.COLOR_TEMP}
-    _attr_color_mode = ColorMode.RGB
     _attr_min_color_temp_kelvin = 2200
     _attr_max_color_temp_kelvin = 6500
 
