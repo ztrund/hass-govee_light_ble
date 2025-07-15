@@ -49,6 +49,7 @@ class GoveeAPI:
         """ transmit the actiual packet """
         #convert to bytes
         frame = await GoveeUtils.generateFrame(packet)
+        _LOGGER.debug(f"Transmitting packet: {frame.hex()}")
         #transmit to UUID
         await self._client.write_gatt_char(WRITE_CHARACTERISTIC_UUID, frame, False)
 
