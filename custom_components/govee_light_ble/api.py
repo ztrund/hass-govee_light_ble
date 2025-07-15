@@ -21,6 +21,7 @@ class GoveeAPI:
     state: bool | None = None
     brightness: int | None = None
     color: tuple[int, ...] | None = None
+    color_temp_kelvin: int | None = None
 
     def __init__(self, ble_device: BLEDevice, update_callback, segmented: bool = False):
         self._conn = None
@@ -156,3 +157,30 @@ class GoveeAPI:
             await self._preparePacket(LedPacketCmd.COLOR, [LedColorType.SINGLE, red, green, blue])
             await self._preparePacket(LedPacketCmd.COLOR, [LedColorType.LEGACY, red, green, blue])
         await self.requestColorBuffered()
+
+    async def setColorTempBuffered(self, kelvin: int):
+        """
+        Sends color temp (Kelvin) to Govee BLE light.
+        Govee accepts 2000 (0x07D0) = 2200K warm
+                      9000 (0x2328) = 6500K cool
+        """
+        kelvin = max(2200, min(6500, kelvin))  # Clamp to supported range
+
+        # Map 2200–6500K -> 2000–9000 range
+        def map_kelvin(k):
+            return int((k - 2200) / (6500 - 2200) * (9000 - 2000) + 2000)
+
+        govee_val = map_kelvin(kelvin)
+        kelvin_bytes = govee_val.to_bytes(2, 'big')
+
+        payload = [
+            LedColorType.SEGMENTS,  # 0x15
+            0x01,  # Segment 1
+            0xFF, 0xFF, 0xFF,       # RGB white (placeholder or actual?)
+            kelvin_bytes[0], kelvin_bytes[1],  # mapped value
+            0xFF, 0xFF,
+            0x0F, 0x00, 0x00, 0x00, 0x00, 0x00
+        ]
+
+        self.color_temp_kelvin = kelvin  # Track current value for UI
+        await self._preparePacket(LedPacketCmd.COLOR, payload)

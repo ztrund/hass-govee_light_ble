@@ -20,6 +20,7 @@ class GoveeApiData:
     state: bool | None = None
     brightness: int | None = None
     color: tuple[int, ...] | None = None
+    color_temp_kelvin: int | None = None
 
 class GoveeCoordinator(DataUpdateCoordinator):
     """My coordinator."""
@@ -59,7 +60,8 @@ class GoveeCoordinator(DataUpdateCoordinator):
         return GoveeApiData(
             state=self._api.state,
             brightness=self._api.brightness,
-            color=self._api.color
+            color=self._api.color,
+            color_temp_kelvin=self._api.color_temp_kelvin
         )
 
     async def _async_push_data(self):
@@ -85,6 +87,9 @@ class GoveeCoordinator(DataUpdateCoordinator):
 
     async def setColorBuffered(self, red: int, green: int, blue: int):
         await self._api.setColorBuffered(red, green, blue)
+
+    async def setColorTempBuffered(self, kelvin: int):
+        await self._api.setColorTempBuffered(kelvin)
 
     async def sendPacketBuffer(self):
         await self._api.sendPacketBuffer()
