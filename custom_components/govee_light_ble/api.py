@@ -176,11 +176,11 @@ class GoveeAPI:
 
         payload = [
             LedColorType.SEGMENTS,  # 0x15
-            0x01,  # Segment 1
-            0xFF, 0xFF, 0xFF,       # RGB white (placeholder or actual?)
-            kelvin_bytes[0], kelvin_bytes[1],  # mapped value
-            0xFF, 0xFF,
-            0x0F, 0x00, 0x00, 0x00, 0x00, 0x00
+            0x01,
+            0xFF, 0xFF, 0xFF,  # RGB White
+            kelvin_bytes[0], kelvin_bytes[1],
+            0xFF, 0xFF, 0xFF,
+            0xFF, 0x0F, 0x00, 0x00, 0x00, 0x00
         ]
 
         self.color_temp_kelvin = kelvin  # Track current value for UI
