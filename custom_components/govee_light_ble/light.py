@@ -4,7 +4,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.device_registry import DeviceInfo
-from homeassistant.components.light import (ColorMode, LightEntity, ATTR_BRIGHTNESS, ATTR_RGB_COLOR)
+from homeassistant.components.light import (ColorMode, LightEntity, ATTR_BRIGHTNESS, ATTR_RGB_COLOR, ATTR_COLOR_TEMP_KELVIN)
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
@@ -36,8 +36,9 @@ async def async_setup_entry(
 
 class GoveeBluetoothLight(CoordinatorEntity, LightEntity):
 
-    _attr_supported_color_modes = {ColorMode.RGB}
-    _attr_color_mode = ColorMode.RGB
+    _attr_supported_color_modes = {ColorMode.RGB, ColorMode.COLOR_TEMP}
+    _attr_min_color_temp_kelvin = 2200
+    _attr_max_color_temp_kelvin = 6500
 
     def __init__(self, coordinator: GoveeCoordinator):
         """Initialize."""
@@ -71,6 +72,17 @@ class GoveeBluetoothLight(CoordinatorEntity, LightEntity):
         """Return the current rgw color."""
         return self.coordinator.data.color
 
+    @property
+    def color_temp_kelvin(self) -> int | None:
+        return self.coordinator.data.color_temp_kelvin
+
+    @property
+    def color_mode(self) -> ColorMode:
+        """Return the current color mode."""
+        if self.color_temp_kelvin:
+            return ColorMode.COLOR_TEMP
+        return ColorMode.RGB
+
     async def async_turn_on(self, **kwargs):
         """Turn device on."""
         await self.coordinator.setStateBuffered(True)
@@ -83,7 +95,11 @@ class GoveeBluetoothLight(CoordinatorEntity, LightEntity):
         if ATTR_RGB_COLOR in kwargs:
             red, green, blue = kwargs.get(ATTR_RGB_COLOR)
             await self.coordinator.setColorBuffered(red, green, blue)
-        
+
+        if ATTR_COLOR_TEMP_KELVIN in kwargs:
+            kelvin = kwargs[ATTR_COLOR_TEMP_KELVIN]
+            await self.coordinator.setColorTempBuffered(kelvin)
+
         await self.coordinator.sendPacketBuffer()
 
     
