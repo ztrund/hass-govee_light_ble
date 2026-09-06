@@ -76,6 +76,13 @@ class GoveeBluetoothLight(CoordinatorEntity, LightEntity):
     def color_temp_kelvin(self) -> int | None:
         return self.coordinator.data.color_temp_kelvin
 
+    @property
+    def color_mode(self) -> ColorMode:
+        """Return the current color mode."""
+        if self.color_temp_kelvin:
+            return ColorMode.COLOR_TEMP
+        return ColorMode.RGB
+
     async def async_turn_on(self, **kwargs):
         """Turn device on."""
         await self.coordinator.setStateBuffered(True)

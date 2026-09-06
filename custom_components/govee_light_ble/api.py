@@ -108,10 +108,12 @@ class GoveeAPI:
         if not self._packet_buffer:
             #nothing to do
             return None
-        await self._ensureConnected()
-        for packet in self._packet_buffer:
-            await self._transmitPacket(packet)
-        await self._clearPacketBuffer()
+        try:
+            await self._ensureConnected()
+            for packet in self._packet_buffer:
+                await self._transmitPacket(packet)
+        finally:
+            await self._clearPacketBuffer()
         #not disconnecting seems to improve connection speed
 
     async def requestStateBuffered(self):
@@ -133,16 +135,12 @@ class GoveeAPI:
     
     async def setStateBuffered(self, state: bool):
         """ adds the state to the transmit buffer """
-        if self.state == state:
-            return None #nothing to do
         #0x1 = ON, Ox0 = OFF
         await self._preparePacket(LedPacketCmd.POWER, [0x1 if state else 0x0])
         await self.requestStateBuffered()
     
     async def setBrightnessBuffered(self, brightness: int):
         """ adds the brightness to the transmit buffer """
-        if self.brightness == brightness:
-            return None #nothing to do
         #legacy devices 0-255
         payload = round(brightness)
         if self._segmented:
@@ -153,8 +151,7 @@ class GoveeAPI:
         
     async def setColorBuffered(self, red: int, green: int, blue: int):
         """ adds the color to the transmit buffer """
-        if self.color == (red, green, blue):
-            return None #nothing to do
+        self.color_temp_kelvin = None
         if self._segmented:
             await self._preparePacket(LedPacketCmd.COLOR, [LedColorType.SEGMENTS, 0x01, red, green, blue, 0, 0, 0, 0, 0, 0xff, 0xff])
         else:
