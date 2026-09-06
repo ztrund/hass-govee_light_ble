@@ -70,10 +70,12 @@ class GoveeAPI:
                     self._segmented = False
                 self.brightness = val / 100 * 255 if self._segmented else val
             case LedPacketCmd.COLOR:
-                red = packet.payload[1]
-                green = packet.payload[2]
-                blue = packet.payload[3]
-                self.color = (red, green, blue)
+                # Ignore legacy color responses if we already know it's a segmented device
+                if not getattr(self, '_segmented', False):
+                    red = packet.payload[1]
+                    green = packet.payload[2]
+                    blue = packet.payload[3]
+                    self.color = (red, green, blue)
             case LedPacketCmd.SEGMENT:
                 # If we get a segment response, we know it supports the newer protocol
                 self._segmented = True
@@ -132,10 +134,11 @@ class GoveeAPI:
 
     async def requestColorBuffered(self):
         """ adds a request for the current color state to the transmit buffer """
-        #0x01 means first segment
-        await self._preparePacket(LedPacketCmd.SEGMENT, b'\x01', request=True)
-        #legacy devices
-        await self._preparePacket(LedPacketCmd.COLOR, request=True)
+        if self._segmented:
+            await self._preparePacket(LedPacketCmd.SEGMENT, b'\x01', request=True)
+        else:
+            await self._preparePacket(LedPacketCmd.SEGMENT, b'\x01', request=True)
+            await self._preparePacket(LedPacketCmd.COLOR, request=True)
     
     async def setStateBuffered(self, state: bool):
         """ adds the state to the transmit buffer """
@@ -156,10 +159,13 @@ class GoveeAPI:
     async def setColorBuffered(self, red: int, green: int, blue: int):
         """ adds the color to the transmit buffer """
         self.color_temp_kelvin = None
-        # Send packets for all known device types to ensure compatibility
-        await self._preparePacket(LedPacketCmd.COLOR, [LedColorType.SEGMENTS, 0x01, red, green, blue, 0, 0, 0, 0, 0, 0xff, 0xff])
-        await self._preparePacket(LedPacketCmd.COLOR, [LedColorType.SINGLE, red, green, blue])
-        await self._preparePacket(LedPacketCmd.COLOR, [LedColorType.LEGACY, red, green, blue])
+        if self._segmented:
+            await self._preparePacket(LedPacketCmd.COLOR, [LedColorType.SEGMENTS, 0x01, red, green, blue, 0, 0, 0, 0, 0, 0xff, 0xff])
+        else:
+            # Send packets for all known device types to ensure compatibility if unknown
+            await self._preparePacket(LedPacketCmd.COLOR, [LedColorType.SEGMENTS, 0x01, red, green, blue, 0, 0, 0, 0, 0, 0xff, 0xff])
+            await self._preparePacket(LedPacketCmd.COLOR, [LedColorType.SINGLE, red, green, blue])
+            await self._preparePacket(LedPacketCmd.COLOR, [LedColorType.LEGACY, red, green, blue])
         await self.requestColorBuffered()
 
     async def setColorTempBuffered(self, kelvin: int):
