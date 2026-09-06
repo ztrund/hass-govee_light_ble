@@ -15,8 +15,6 @@ from .coordinator import GoveeCoordinator
 import logging
 _LOGGER = logging.getLogger(__name__)
 
-def num_to_range(num, inMin, inMax, outMin, outMax):
-    return outMin + (float(num - inMin) / float(inMax - inMin) * (outMax - outMin))
 
 async def async_setup_entry(
     hass: HomeAssistant,
@@ -88,9 +86,8 @@ class GoveeBluetoothLight(CoordinatorEntity, LightEntity):
         await self.coordinator.setStateBuffered(True)
 
         if ATTR_BRIGHTNESS in kwargs:
-            brightness = kwargs.get(ATTR_BRIGHTNESS, 255) #1-255
-            brightness_mapped = num_to_range(brightness, 1, 255, 0, 255) #mapping from 1-255 to 0-255
-            await self.coordinator.setBrightnessBuffered(brightness_mapped)
+            brightness = kwargs.get(ATTR_BRIGHTNESS, 255)
+            await self.coordinator.setBrightnessBuffered(brightness)
 
         if ATTR_RGB_COLOR in kwargs:
             red, green, blue = kwargs.get(ATTR_RGB_COLOR)
