@@ -39,10 +39,17 @@ class GoveeCoordinator(DataUpdateCoordinator):
         ble_device = bluetooth.async_ble_device_from_address(
             hass,
             self.device_address,
-            connectable=False
+            connectable=True
         )
         assert ble_device
-        self._api = GoveeAPI(ble_device, self._async_push_data, self.device_segmented)
+        def get_ble_device():
+            return bluetooth.async_ble_device_from_address(
+                hass,
+                self.device_address,
+                connectable=True
+            )
+
+        self._api = GoveeAPI(ble_device, self._async_push_data, self.device_segmented, ble_device_callback=get_ble_device)
 
         # Initialise DataUpdateCoordinator
         super().__init__(

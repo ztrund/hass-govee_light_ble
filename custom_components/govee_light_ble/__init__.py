@@ -31,7 +31,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
 
     #look for device
     device_address = config_entry.data[CONF_ADDRESS]
-    if not bluetooth.async_ble_device_from_address(hass, device_address, False):
+    if not bluetooth.async_ble_device_from_address(hass, device_address, True):
         raise ConfigEntryNotReady(
             f"Could not find LED BLE device with address {device_address}"
         )
