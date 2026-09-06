@@ -23,13 +23,14 @@ class GoveeAPI:
     color: tuple[int, ...] | None = None
     color_temp_kelvin: int | None = None
 
-    def __init__(self, ble_device: BLEDevice, update_callback, segmented: bool = False):
+    def __init__(self, ble_device: BLEDevice, update_callback, segmented: bool = False, ble_device_callback=None):
         self._conn = None
         self._ble_device = ble_device
         self._segmented = segmented
         self._packet_buffer = []
         self._client = None
         self._update_callback = update_callback
+        self._ble_device_callback = ble_device_callback
 
     @property
     def address(self):
@@ -42,7 +43,10 @@ class GoveeAPI:
         await self._connect()
     
     async def _connect(self):
-        self._client = await bleak_retry_connector.establish_connection(BleakClient, self._ble_device, self.address)
+        kwargs = {}
+        if self._ble_device_callback:
+            kwargs["ble_device_callback"] = self._ble_device_callback
+        self._client = await bleak_retry_connector.establish_connection(BleakClient, self._ble_device, self.address, **kwargs)
         await self._client.start_notify(READ_CHARACTERISTIC_UUID, self._handleReceive)
 
     async def _transmitPacket(self, packet: LedPacket):
